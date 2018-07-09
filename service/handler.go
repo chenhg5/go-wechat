@@ -8,6 +8,8 @@ import (
 	"log"
 	"github.com/go-sql-driver/mysql"
 	"github.com/mgutz/ansi"
+	"os"
+	"time"
 )
 
 func CallMethod(wcctx *WechatCtx) {
@@ -65,9 +67,20 @@ func handle(wcctx *WechatCtx) {
 			string(wcctx.Ctx.Path()))
 	}
 
+	if EnvConfig["LOG_IN_FILE"].(bool) {
+
+		f, _ := os.Create(EnvConfig["ACCESS_LOG_PATH"].(string))
+		defer f.Close()
+
+		str := "[GoWechat] " + time.Now().Format("2006-01-02 15:04:05") + " | " + strconv.Itoa(wcctx.Ctx.Response.StatusCode()) + " | " + string(wcctx.Ctx.Method()[:]) + " | " + string(wcctx.Ctx.Path())
+		f.Write([]byte(str))
+	}
+
 	if err := recover(); err != nil {
-		fmt.Println(err)
-		fmt.Println(string(debug.Stack()[:]))
+		if EnvConfig["DEBUG"].(bool) {
+			fmt.Println(err)
+			fmt.Println(string(debug.Stack()[:]))
+		}
 
 		var (
 			errMsg string
@@ -75,12 +88,21 @@ func handle(wcctx *WechatCtx) {
 			ok bool
 		)
 		if errMsg, ok = err.(string); ok {
-			wcctx.Json(fasthttp.StatusInternalServerError, errMsg, "")
 		} else if mysqlError, ok = err.(*mysql.MySQLError); ok {
-			wcctx.Json(fasthttp.StatusInternalServerError, mysqlError.Error(), "")
+			errMsg = mysqlError.Error()
 		} else {
-			wcctx.Json(fasthttp.StatusInternalServerError, "系统错误", "")
+			errMsg = "系统错误"
+		}
 
+		wcctx.Json(fasthttp.StatusInternalServerError, errMsg, "")
+
+		if EnvConfig["LOG_IN_FILE"].(bool) {
+
+			f, _ := os.Create(EnvConfig["ERROR_LOG_PATH"].(string))
+			defer f.Close()
+
+			f.Write([]byte(errMsg))
+			f.Write(debug.Stack())
 		}
 
 		WechatCtxPool.Put(wcctx)

@@ -4,3 +4,5 @@ vendor/**
 build/*
 deploy
 config.go
+log/access.log
+log/error.log
