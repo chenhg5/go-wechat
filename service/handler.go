@@ -44,19 +44,19 @@ func CallMethod(wcctx *WechatCtx) {
 type EndPoint func(*WechatCtx) ([]byte, error)
 
 var GlobalFuncMap = map[string]EndPoint{
-	"GetNewAccessToken": GetNewAccessToken,
-	"GetWebOauthAccessToken": GetWebOauthAccessToken,
-	"RefreshWebOauthAccessToken": RefreshWebOauthAccessToken,
-	"GetWebOauthUserinfo": GetWebOauthUserinfo,
+	"GetNewAccessToken":             GetNewAccessToken,
+	"GetWebOauthAccessToken":        GetWebOauthAccessToken,
+	"RefreshWebOauthAccessToken":    RefreshWebOauthAccessToken,
+	"GetWebOauthUserinfo":           GetWebOauthUserinfo,
 	"CheckWebOauthAccessTokenValid": CheckWebOauthAccessTokenValid,
-	"SendTemplateMessage": SendTemplateMessage,
-	"WxappOauth": WxappOauth,
-	"GetWxappCode": GetWxappCode,
-	"GetWxappCodeUnlimit": GetWxappCodeUnlimit,
-	"GetWxappCodeQrcode": GetWxappCodeQrcode,
-	"SendWxappTemplateMessage": SendWxappTemplateMessage,
-	"PayUnifiedOrder": PayUnifiedOrder,
-	"DecodeWxappData": DecodeWxappData,
+	"SendTemplateMessage":           SendTemplateMessage,
+	"WxappOauth":                    WxappOauth,
+	"GetWxappCode":                  GetWxappCode,
+	"GetWxappCodeUnlimit":           GetWxappCodeUnlimit,
+	"GetWxappCodeQrcode":            GetWxappCodeQrcode,
+	"SendWxappTemplateMessage":      SendWxappTemplateMessage,
+	"PayUnifiedOrder":               PayUnifiedOrder,
+	"DecodeWxappData":               DecodeWxappData,
 }
 
 func handle(wcctx *WechatCtx) {
@@ -84,15 +84,17 @@ func handle(wcctx *WechatCtx) {
 		}
 
 		var (
-			errMsg string
+			errMsg     string
 			mysqlError *mysql.MySQLError
-			ok bool
+			ok         bool
 		)
-		if errMsg, ok = err.(string); ok {
-		} else if mysqlError, ok = err.(*mysql.MySQLError); ok {
-			errMsg = mysqlError.Error()
-		} else {
-			errMsg = "系统错误"
+
+		if errMsg, ok = err.(string); !ok {
+			if mysqlError, ok = err.(*mysql.MySQLError); ok {
+				errMsg = mysqlError.Error()
+			} else {
+				errMsg = "系统错误"
+			}
 		}
 
 		wcctx.Json(fasthttp.StatusInternalServerError, errMsg, "")
