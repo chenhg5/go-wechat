@@ -10,6 +10,7 @@ import (
 	"github.com/mgutz/ansi"
 	"os"
 	"time"
+	"io"
 )
 
 func CallMethod(wcctx *WechatCtx) {
@@ -97,12 +98,17 @@ func handle(wcctx *WechatCtx) {
 		wcctx.Json(fasthttp.StatusInternalServerError, errMsg, "")
 
 		if EnvConfig["LOG_IN_FILE"].(bool) {
-
 			f, _ := os.Create(EnvConfig["ERROR_LOG_PATH"].(string))
 			defer f.Close()
 
-			f.Write([]byte(errMsg))
-			f.Write(debug.Stack())
+			defaultWriter := io.MultiWriter(f)
+
+			fmt.Fprintf(defaultWriter, "%s", "\n")
+			fmt.Fprintf(defaultWriter, "%s", "["+time.Now().Format("2006-01-02 15:04:05")+"] app.ERROR: ")
+			fmt.Fprintf(defaultWriter, "%s", err)
+			fmt.Fprintf(defaultWriter, "%s", "\nStack trace:\n")
+			fmt.Fprintf(defaultWriter, "%s", debug.Stack())
+			fmt.Fprintf(defaultWriter, "%s", "\n")
 		}
 
 		WechatCtxPool.Put(wcctx)
