@@ -23,4 +23,9 @@ func main() {
 
 	// 初始化服务器
 	InitServer(EnvConfig["SERVER_PORT"].(string))
+
+	// 初始化Logger
+	if EnvConfig["LOG_IN_FILE"].(bool) {
+		InitLogger()
+	}
 }

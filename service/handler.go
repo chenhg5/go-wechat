@@ -8,9 +8,7 @@ import (
 	"log"
 	"github.com/go-sql-driver/mysql"
 	"github.com/mgutz/ansi"
-	"os"
 	"time"
-	"io"
 )
 
 func CallMethod(wcctx *WechatCtx) {
@@ -70,11 +68,11 @@ func handle(wcctx *WechatCtx) {
 
 	if EnvConfig["LOG_IN_FILE"].(bool) {
 
-		f, _ := os.Create(EnvConfig["ACCESS_LOG_PATH"].(string))
-		defer f.Close()
-
-		str := "[GoWechat] " + time.Now().Format("2006-01-02 15:04:05") + " | " + strconv.Itoa(wcctx.Ctx.Response.StatusCode()) + " | " + string(wcctx.Ctx.Method()[:]) + " | " + string(wcctx.Ctx.Path())
-		f.Write([]byte(str))
+		AccessLogger.log("[GoWechat] ")
+		AccessLogger.log(time.Now().Format("2006-01-02 15:04:05") + " | ")
+		AccessLogger.log(strconv.Itoa(wcctx.Ctx.Response.StatusCode()) + " | ")
+		AccessLogger.log(string(wcctx.Ctx.Method()[:]) + " | ")
+		AccessLogger.log(string(wcctx.Ctx.Path()))
 	}
 
 	if err := recover(); err != nil {
@@ -100,17 +98,13 @@ func handle(wcctx *WechatCtx) {
 		wcctx.Json(fasthttp.StatusInternalServerError, errMsg, "")
 
 		if EnvConfig["LOG_IN_FILE"].(bool) {
-			f, _ := os.Create(EnvConfig["ERROR_LOG_PATH"].(string))
-			defer f.Close()
 
-			defaultWriter := io.MultiWriter(f)
-
-			fmt.Fprintf(defaultWriter, "%s", "\n")
-			fmt.Fprintf(defaultWriter, "%s", "["+time.Now().Format("2006-01-02 15:04:05")+"] app.ERROR: ")
-			fmt.Fprintf(defaultWriter, "%s", err)
-			fmt.Fprintf(defaultWriter, "%s", "\nStack trace:\n")
-			fmt.Fprintf(defaultWriter, "%s", debug.Stack())
-			fmt.Fprintf(defaultWriter, "%s", "\n")
+			ErrorLogger.log( "\n")
+			ErrorLogger.log( "["+time.Now().Format("2006-01-02 15:04:05")+"] app.ERROR: ")
+			ErrorLogger.log( err)
+			ErrorLogger.log( "\nStack trace:\n")
+			ErrorLogger.log( debug.Stack())
+			ErrorLogger.log( "\n")
 		}
 
 		WechatCtxPool.Put(wcctx)
